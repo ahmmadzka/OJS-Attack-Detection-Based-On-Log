@@ -13,8 +13,14 @@ echo "Setup Proyek OJS IDS"
 if [ ! -d "extractor/.git" ]; then
     echo "[1/4] Mengkloning repositori traffic-extractor..."
     git clone https://github.com/yogarn/traffic-extractor.git extractor/
+    # Salin Dockerfile karena repo traffic-extractor tidak menyertakannya
+    cp scripts/extractor.Dockerfile extractor/Dockerfile
 else
     echo "[1/4] traffic-extractor sudah diklon, dilewati..."
+    # Pastikan Dockerfile tetap ada (jika folder diklon manual)
+    if [ ! -f "extractor/Dockerfile" ]; then
+        cp scripts/extractor.Dockerfile extractor/Dockerfile
+    fi
 fi
 
 # 2. Buat file .env dari template jika belum ada
