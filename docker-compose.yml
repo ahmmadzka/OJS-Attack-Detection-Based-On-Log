@@ -72,8 +72,12 @@ services:
   #     - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
   #     - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
   #   networks: ojs-network
-  
+
 volumes:
   postgres-data:
   ojs-files:
   ojs-public:
+
+networks:
+  ojs-network:
+    driver: bridge
