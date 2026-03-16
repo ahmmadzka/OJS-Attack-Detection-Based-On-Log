@@ -9,6 +9,9 @@ cd "$(dirname "$0")/.." || { echo "error tidak menemukan root proyek" >&2; exit 
 
 echo "setup projek"
 
+# bersihkan container dan volume lama (jika ada)
+docker compose down -v 2>/dev/null || true
+
 # clone repositori traffic extractor dari repo
 if [ ! -d "extractor/.git" ]; then
     echo "cloning repositori traffic extractor"
