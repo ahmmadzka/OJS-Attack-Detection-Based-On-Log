@@ -34,9 +34,6 @@ fi
 
 # direktori yang dibutuhkan
 mkdir -p nginx/logs
-mkdir -p dataset/raw_logs
-mkdir -p dataset/processed
-mkdir -p dataset/export
 
 # container docker
 docker compose up -d --build

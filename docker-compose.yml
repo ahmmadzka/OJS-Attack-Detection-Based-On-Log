@@ -57,6 +57,7 @@ services:
       - "127.0.0.1:8081:8081"
     volumes:
       - ./extractor/logs:/app/logs
+      - ./extractor/requests.log:/app/requests.log
     networks:
       - ojs-network
 
