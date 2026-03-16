@@ -27,7 +27,11 @@ fi
 if [ ! -f ".env" ]; then
     echo "membuat .env dari .env.example"
     cp .env.example .env
-    echo "      >> edit .env dengan nilai yang sebenarnya"
+    echo ""
+    echo "silahkan edit file .env (nano .env)"
+    echo "Sesuaikan POSTGRES_USER, POSTGRES_PASSWORD, dll"
+    echo ""
+    read -p "Tekan ENTER setelah selesai mengedit .env..." _
 else
     echo " .env sudah ada"
 fi
@@ -39,6 +43,8 @@ touch extractor/requests.log
 # container docker
 docker compose up -d --build
 
-echo "Akses OJS di: http://localhost"
-echo "ML Service di: http://localhost:5000"
-echo "Extractor di:  http://localhost:8080"
+echo ""
+echo "  Deployment selesai!"
+echo "  Akses OJS di: http://localhost"
+echo "  Extractor di: http://localhost:8081"
+echo "  ML Service di: http://localhost:5000"
