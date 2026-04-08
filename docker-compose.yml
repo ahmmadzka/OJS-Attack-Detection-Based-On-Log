@@ -30,7 +30,6 @@ services:
       OJS_DB_USER: ${POSTGRES_USER}
       OJS_DB_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - ./ojs/config.inc.php:/var/www/html/config.inc.php
       - ojs-files:/var/www/files
       - ojs-public:/var/www/html/public
     depends_on:
