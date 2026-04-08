@@ -1,50 +1,72 @@
 #!/bin/bash
-# inisialisasi environment proyek
-
 set -e
 
-# script berjalan dari root proyek
-cd "$(dirname "$0")/.." || { echo "error tidak menemukan root proyek" >&2; exit 1; }
+cd "$(dirname "$0")/.." || exit 1
 
-echo "setup projek"
+echo "Setup project"
 
-# bersihkan container dan volume lama (jika ada)
-docker compose down -v 2>/dev/null || true
+CONFIG_FILE="./ojs/config.inc.php"
 
-# clone repositori traffic extractor dari repo
+# detect first run
+if [ ! -f "$CONFIG_FILE" ]; then
+    FIRST_RUN=true
+    echo "First run"
+else
+    FIRST_RUN=false
+    echo "Existing setup"
+fi
+
+# stop container (non destructive)
+docker compose down 2>/dev/null || true
+
+# clone extractor if not exist
 if [ ! -d "extractor/.git" ]; then
-    echo "cloning repositori traffic extractor"
     git clone https://github.com/yogarn/traffic-extractor.git extractor/
     cp scripts/extractor.Dockerfile extractor/Dockerfile
-else
-    echo "traffic extractor sudah diclone"
-    if [ ! -f "extractor/Dockerfile" ]; then
-        cp scripts/extractor.Dockerfile extractor/Dockerfile
-    fi
 fi
 
-# buat file .env dari template jika belum ada
+# env setup
 if [ ! -f ".env" ]; then
-    echo "membuat .env dari .env.example"
     cp .env.example .env
-    echo ""
-    echo "silahkan edit file .env (nano .env)"
-    echo "Sesuaikan POSTGRES_USER, POSTGRES_PASSWORD, dll"
-    echo ""
-    read -p "Tekan ENTER setelah selesai mengedit .env..." _
-else
-    echo " .env sudah ada"
+    echo "Edit .env first"
+    read -p "Press ENTER after editing..." _
 fi
 
-# direktori dan file yang dibutuhkan
+# prepare directories
 mkdir -p nginx/logs
 touch extractor/requests.log
 
-# container docker
-docker compose up -d --build
+# start containers
+if [ "$FIRST_RUN" = true ]; then
+    docker compose up -d --build
+else
+    docker compose up -d
+fi
 
-echo ""
-echo "  Deployment selesai!"
-echo "  Akses OJS di: http://localhost"
-echo "  Extractor di: http://localhost:8081"
-echo "  ML Service di: http://localhost:5000"
+# first run logic
+if [ "$FIRST_RUN" = true ]; then
+    echo "Open http://localhost and finish OJS installation"
+    read -p "Press ENTER after install done..." _
+
+    echo "Waiting for container..."
+    until docker exec ojs-app ls /var/www/html >/dev/null 2>&1; do
+        sleep 2
+    done
+
+    echo "Copy config"
+    docker cp ojs-app:/var/www/html/config.inc.php "$CONFIG_FILE"
+
+    # inject mount if not exist
+    if ! grep -q "config.inc.php:/var/www/html/config.inc.php" docker-compose.yml; then
+        echo "Inject config mount"
+        sed -i '/ojs-public/a\      - ./ojs/config.inc.php:/var/www/html/config.inc.php' docker-compose.yml
+    fi
+
+    echo "Restart with persistent config"
+    docker compose down
+    docker compose up -d
+
+    echo "Setup complete (persistent mode active)"
+else
+    echo "Already configured"
+fi
