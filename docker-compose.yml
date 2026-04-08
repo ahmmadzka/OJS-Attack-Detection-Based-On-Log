@@ -32,7 +32,6 @@ services:
     volumes:
       - ojs-files:/var/www/files
       - ojs-public:/var/www/html/public
-      - ojs-config:/var/www/html/config.inc.php
     depends_on:
       - postgres
     networks:
@@ -82,7 +81,6 @@ volumes:
   ojs-files:
   ojs-public:
   ojs-config:
-  extractor-logs:
 
 networks:
   ojs-network:
