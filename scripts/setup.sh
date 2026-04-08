@@ -1,5 +1,4 @@
 #!/bin/bash
-# skrip setup proyek ojs ids
 # inisialisasi environment proyek
 
 set -e
@@ -16,11 +15,9 @@ docker compose down -v 2>/dev/null || true
 if [ ! -d "extractor/.git" ]; then
     echo "cloning repositori traffic extractor"
     git clone https://github.com/yogarn/traffic-extractor.git extractor/
-    # salin dockerfile traffic extractor
     cp scripts/extractor.Dockerfile extractor/Dockerfile
 else
     echo "traffic extractor sudah diclone"
-    # pastikan dockerfile ada jika folder diclone manual
     if [ ! -f "extractor/Dockerfile" ]; then
         cp scripts/extractor.Dockerfile extractor/Dockerfile
     fi
