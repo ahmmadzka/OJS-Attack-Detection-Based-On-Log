@@ -92,12 +92,4 @@ else
 
     echo ""
     echo "Container started (existing config)"
-    echo ""
-    echo "Useful commands:"
-    echo "  docker compose logs -f ojs        → OJS logs"
-    echo "  docker compose logs -f nginx      → NGINX logs"
-    echo "  docker compose logs -f extractor  → Extractor logs"
-    echo "  docker exec -it ojs-app bash      → Shell ke OJS container"
-    echo "  docker compose down               → Stop semua container"
-
 fi
