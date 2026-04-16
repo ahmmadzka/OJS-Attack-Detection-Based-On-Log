@@ -21,7 +21,7 @@ docker compose down 2>/dev/null || true
 
 # clone extractor if not exist
 if [ ! -d "extractor/.git" ]; then
-    git clone https://github.com/yogarn/traffic-extractor.git extractor/
+    git clone ht    tps://github.com/yogarn/traffic-extractor.git extractor/
     cp scripts/extractor.Dockerfile extractor/Dockerfile
 fi
 
