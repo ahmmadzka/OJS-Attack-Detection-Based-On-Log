@@ -54,7 +54,7 @@ if [ "$FIRST_RUN" = true ]; then
     # Ensure config has defaults to avoid empty encoding issues
     if [ ! -s "$CONFIG_FILE" ]; then
         echo "Seeding config.inc.php from template..."
-        docker exec ojs-app sh -lc 'cp /var/www/html/config.TEMPLATE.inc.php /var/www/html/config.inc.php'
+        docker exec ojs-app sh -lc 'if [ ! -s /var/www/html/config.inc.php ]; then cat /var/www/html/config.TEMPLATE.inc.php > /var/www/html/config.inc.php; fi'
         docker cp ojs-app:/var/www/html/config.inc.php "$CONFIG_FILE"
     fi
 
