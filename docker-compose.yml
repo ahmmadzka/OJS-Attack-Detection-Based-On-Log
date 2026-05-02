@@ -37,7 +37,7 @@ services:
       - ojs-files:/var/www/files
       - ojs-public:/var/www/html/public
       - ojs-plugins:/var/www/html/plugins
-      - ./ojs/config.inc.php:/var/www/html/config.inc.php
+      - ./ojs/config.inc.php:/var/www/html/config.inc.php:ro
     depends_on:
       postgres:
         condition: service_healthy

@@ -85,7 +85,7 @@ docker compose up -d --build
 
 catatan:
 
-- config.inc.php harus sudah dimount ke container
+- config.inc.php dimount read-only untuk mencegah overwrite
 - jika tidak, ojs akan kembali ke halaman installer
 
 ---
@@ -103,8 +103,10 @@ docker cp ojs-app:/var/www/html/config.inc.php ./ojs/config.inc.php
 2. pastikan docker-compose.yml memiliki mount berikut:
 
 ```yaml
-- ./ojs/config.inc.php:/var/www/html/config.inc.php
+- ./ojs/config.inc.php:/var/www/html/config.inc.php:ro
 ```
+
+Jika perlu mengubah config, sementara ubah mount ke rw, edit file, lalu kembalikan ke :ro.
 
 3. restart container
 
