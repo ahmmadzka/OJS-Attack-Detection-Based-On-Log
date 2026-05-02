@@ -51,6 +51,19 @@ if [ "$FIRST_RUN" = true ]; then
 
     docker compose up -d --build
 
+    # Ensure config has defaults to avoid empty encoding issues
+    if [ ! -s "$CONFIG_FILE" ]; then
+        echo "Seeding config.inc.php from template..."
+        docker exec ojs-app sh -lc 'cp /var/www/html/config.TEMPLATE.inc.php /var/www/html/config.inc.php'
+        docker cp ojs-app:/var/www/html/config.inc.php "$CONFIG_FILE"
+    fi
+
+    # Fix permissions for Apache user inside container
+    docker exec ojs-app sh -lc 'chown -R apache:apache /var/www/html/public /var/www/files /var/www/html/cache'
+    docker exec ojs-app sh -lc 'chmod -R 775 /var/www/html/public /var/www/files /var/www/html/cache'
+    docker exec ojs-app sh -lc 'chown apache:apache /var/www/html/config.inc.php'
+    docker exec ojs-app sh -lc 'chmod 664 /var/www/html/config.inc.php'
+
     echo ""
     echo "============================================================"
     echo "  OJS sedang berjalan."
