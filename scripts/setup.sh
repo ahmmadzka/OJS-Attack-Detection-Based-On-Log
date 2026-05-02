@@ -58,6 +58,10 @@ if [ "$FIRST_RUN" = true ]; then
         docker cp ojs-app:/var/www/html/config.inc.php "$CONFIG_FILE"
     fi
 
+    # Make sure installer can write config (bind mount)
+    chmod 666 "$CONFIG_FILE"
+    docker exec ojs-app sh -lc 'chmod 666 /var/www/html/config.inc.php'
+
     # Fix permissions for Apache user inside container
     docker exec ojs-app sh -lc 'chown -R apache:apache /var/www/html/public /var/www/files /var/www/html/cache'
     docker exec ojs-app sh -lc 'chmod -R 775 /var/www/html/public /var/www/files /var/www/html/cache'
@@ -73,16 +77,20 @@ if [ "$FIRST_RUN" = true ]; then
     read -p "" _
 
     echo "Waiting for container..."
-    until docker exec ojs-app ls /var/www/html/config.inc.php >/dev/null 2>&1; do
+    until docker exec ojs-app sh -lc 'test -d /var/www/html' >/dev/null 2>&1; do
         sleep 2
     done
+    # Ensure config file exists in container
+    docker exec ojs-app sh -lc 'touch /var/www/html/config.inc.php'
 
-    # Cek apakah installer berhasil nulis config 
-    CONFIG_SIZE=$(docker exec ojs-app wc -c < /var/www/html/config.inc.php 2>/dev/null || echo 0)
-    if [ "$CONFIG_SIZE" -gt 100 ]; then
+    # Cek apakah installer berhasil nulis config
+    CONFIG_SIZE=$(docker exec ojs-app sh -lc 'wc -c < /var/www/html/config.inc.php 2>/dev/null || echo 0')
+    INSTALLED_FLAG=$(docker exec ojs-app sh -lc "grep -E '^installed[[:space:]]*=' /var/www/html/config.inc.php | tail -n 1" 2>/dev/null || echo "")
+    if [ "$CONFIG_SIZE" -gt 100 ] && echo "$INSTALLED_FLAG" | grep -qi 'On'; then
         echo "Config berhasil ditulis"
         # Sync balik ke host (untuk backup/persistent)
         docker cp ojs-app:/var/www/html/config.inc.php "$CONFIG_FILE"
+        chmod 666 "$CONFIG_FILE"
         echo "Config disync ke host: $CONFIG_FILE"
     else
         echo "Installer tidak bisa menulis config"
