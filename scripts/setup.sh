@@ -49,6 +49,11 @@ if [ "$FIRST_RUN" = true ]; then
         sed -i '/ojs-public/a\      - ./ojs\/config.inc.php:\/var\/www\/html\/config.inc.php' docker-compose.yml
     fi
 
+    # Ensure config mount is writable for installer
+    if grep -q "config.inc.php:/var/www/html/config.inc.php:ro" docker-compose.yml; then
+        sed -i 's#config.inc.php:/var/www/html/config.inc.php:ro#config.inc.php:/var/www/html/config.inc.php#' docker-compose.yml
+    fi
+
     docker compose up -d --build
 
     # Ensure config has defaults to avoid empty encoding issues
@@ -92,6 +97,12 @@ if [ "$FIRST_RUN" = true ]; then
         docker cp ojs-app:/var/www/html/config.inc.php "$CONFIG_FILE"
         chmod 666 "$CONFIG_FILE"
         echo "Config disync ke host: $CONFIG_FILE"
+
+        # Lock config mount to prevent overwrite on restart
+        if ! grep -q "config.inc.php:/var/www/html/config.inc.php:ro" docker-compose.yml; then
+            sed -i 's#config.inc.php:/var/www/html/config.inc.php#config.inc.php:/var/www/html/config.inc.php:ro#' docker-compose.yml
+            echo "Config mount set to read-only"
+        fi
     else
         echo "Installer tidak bisa menulis config"
         echo "Silakan copy isi config dari halaman install OJS,"
