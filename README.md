@@ -12,15 +12,15 @@ Client ──► NGINX (reverse proxy + mirror)
 
 ## komponen
 
-| Service        | Description                                                                                                           | Port                               |
-| -------------- | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| **NGINX**      | Reverse proxy + traffic mirroring ke extractor                                                                        | `80` (host)                        |
-| **OJS**        | Open Journal Systems platform                                                                                         | internal                           |
-| **PostgreSQL** | Database untuk OJS                                                                                                    | internal                           |
-| **Extractor**  | Traffic log extractor (Go/Gin) diclone dari [`yogarn/traffic-extractor`](https://github.com/yogarn/traffic-extractor) | `8080` (host) → `8081` (container) |
-| **ML Service** | ML inference API — *not yet active*, uncomment di `docker-compose.yml`                                                | `5000`                             |
+| Service        | Description                                                                                                                             | Port                               |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| **NGINX**      | Reverse proxy + traffic mirroring ke extractor                                                                                          | `80` (host)                        |
+| **OJS**        | Open Journal Systems platform (versi 3.3.0-0)                                                                                           | internal                           |
+| **PostgreSQL** | Database untuk OJS                                                                                                                      | internal                           |
+| **Extractor**  | Traffic log extractor (Go/Gin) diclone dari [`ManutKataPakEko/traffic-extractor`](https://github.com/ManutKataPakEko/traffic-extractor) | `8081` (host) → `8081` (container) |
+| **ML Service** | ML inference API — _not yet active_, uncomment di `docker-compose.yml`                                                                  | `5000`                             |
 
-> daftar port extractor: `docker-compose.yml`, port host `8080` ke port container `8081`. Nginx di `mirror.conf` memanggil `http://extractor:8081`.
+> daftar port extractor: `docker-compose.yml`, port host `8081` ke port container `8081`. Nginx di `mirror.conf` memanggil `http://extractor:8081`.
 
 ## struktur projek
 
@@ -85,8 +85,8 @@ docker compose up -d --build
 
 catatan:
 
-* config.inc.php harus sudah dimount ke container
-* jika tidak, ojs akan kembali ke halaman installer
+- config.inc.php harus sudah dimount ke container
+- jika tidak, ojs akan kembali ke halaman installer
 
 ---
 
@@ -117,10 +117,10 @@ docker compose up -d
 
 ### catatan penting
 
-* jangan gunakan `docker compose down -v` kecuali ingin reset total
-* setup.sh hanya digunakan untuk initial setup
-* gunakan `docker compose up -d` untuk menjalankan sistem
-* config.inc.php adalah file persistence utama untuk ojs
+- jangan gunakan `docker compose down -v` kecuali ingin reset total
+- setup.sh hanya digunakan untuk initial setup
+- gunakan `docker compose up -d` untuk menjalankan sistem
+- config.inc.php adalah file persistence utama untuk ojs
 
 ## integrating ml service
 
