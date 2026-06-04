@@ -124,6 +124,13 @@ docker compose up -d
 - gunakan `docker compose up -d` untuk menjalankan sistem
 - config.inc.php adalah file persistence utama untuk ojs
 
+
+docker compose exec ojs sh -lc "sed -i 's#^base_url = .*#base_url = \"https://ojs-cap-gcp.akbarfikri.my.id\"#' /var/www/html/config.inc.php"
+docker compose exec ojs sh -lc "sed -i 's#^force_ssl = .*#force_ssl = Off#' /var/www/html/config.inc.php"
+docker compose exec ojs sh -lc "sed -i 's#^time_zone = .*#time_zone = \"Asia/Jakarta\"#' /var/www/html/config.inc.php"
+docker compose exec ojs sh -lc "rm -rf /var/www/html/cache/t_compile/* /var/www/html/cache/t_cache/*"
+docker compose restart ojs nginx
+
 ## integrating ml service
 
 otw

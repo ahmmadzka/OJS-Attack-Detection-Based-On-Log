@@ -1,16 +1,17 @@
 services:
-  # nginx reverse proxy dan traffic mirror
   nginx:
     image: nginx:stable
     container_name: ojs-nginx
     restart: unless-stopped
     ports:
       - "80:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - ojs-network
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/mirror.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d
       - ./nginx/logs:/var/log/nginx
     depends_on:
       ojs:
@@ -18,16 +19,17 @@ services:
       extractor:
         condition: service_started
 
-  # ojs
   ojs:
     build:
-      context: ./ojs
+      context: .
+      dockerfile: ojs/Dockerfile
     container_name: ojs-app
     restart: unless-stopped
     ports:
       - "127.0.0.1:8000:80"
     environment:
       OJS_CLI_INSTALL: "0"
+      TZ: Asia/Jakarta
       OJS_DB_HOST: postgres
       OJS_DB_DRIVER: pgsql
       OJS_DB_NAME: ${POSTGRES_DB}
@@ -37,14 +39,13 @@ services:
       - ojs-files:/var/www/files
       - ojs-public:/var/www/html/public
       - ojs-plugins:/var/www/html/plugins
-      - ./ojs/config.inc.php:/var/www/html/config.inc.php:ro
+      - ojs-config:/var/www/html/config-vol
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - ojs-network
 
-  # Database PostgreSQL
   postgres:
     image: postgres:15
     container_name: ojs-postgres
@@ -54,11 +55,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} -h 127.0.0.1 || exit 1",
-        ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -69,17 +66,18 @@ services:
     networks:
       - ojs-network
 
-  # traffic extractor go/gin
   extractor:
     build:
       context: ./extractor
     container_name: traffic-extractor
     restart: unless-stopped
+    environment:
+      TZ: Asia/Jakarta
     ports:
       - "127.0.0.1:8081:8081"
     volumes:
       - ./extractor/requests.log:/app/requests.log
-      - ./.env:/app/.env
+      - ./.env:/app/.env 
     networks:
       - ojs-network
 
@@ -88,6 +86,7 @@ volumes:
   ojs-files:
   ojs-public:
   ojs-plugins:
+  ojs-config:
 
 networks:
   ojs-network:

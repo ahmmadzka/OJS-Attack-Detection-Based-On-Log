@@ -19,3 +19,5 @@ extractor/requests.log
 # ===== Docker =====
 *.log
 
+# ===== OJS =====
+ojs/config.inc.php
