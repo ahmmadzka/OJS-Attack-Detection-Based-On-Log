@@ -1,136 +1,387 @@
-## arsitektur
+# OJS Attack Detection Based On Log
 
+Real-time attack monitoring system for Open Journal Systems (OJS) using log extraction, machine learning integration, and dashboard visualization.
+
+## Components
+
+This deployment consists of:
+
+* Open Journal Systems (OJS) 3.3.0-14
+* PostgreSQL
+* Nginx Reverse Proxy
+* Traffic Extractor
+* ML Attack Detection Integration
+
+All services are deployed using Docker Compose.
+
+---
+
+## Prerequisites
+
+Install:
+
+* Docker
+* Docker Compose v2+
+* Git
+
+Verify installation:
+
+```bash
+docker --version
+docker compose version
+git --version
 ```
-Client ──► NGINX (reverse proxy + mirror)
-              │                │
-              ▼                ▼
-            OJS          Traffic Extractor
-              │                │
-              ▼                ▼
-          PostgreSQL      ML Service ──► Telegram Alert
+
+---
+
+## Clone Repository
+
+```bash
+git clone https://github.com/ahmmadzka/OJS-Attack-Detection-Based-On-Log.git
+
+cd OJS-Attack-Detection-Based-On-Log
 ```
 
-## komponen
+---
 
-| Service        | Description                                                                                                                             | Port                               |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| **NGINX**      | Reverse proxy + traffic mirroring ke extractor                                                                                          | `80` (host)                        |
-| **OJS**        | Open Journal Systems platform (versi 3.3.0-0)                                                                                           | internal                           |
-| **PostgreSQL** | Database untuk OJS                                                                                                                      | internal                           |
-| **Extractor**  | Traffic log extractor (Go/Gin) diclone dari [`ManutKataPakEko/traffic-extractor`](https://github.com/ManutKataPakEko/traffic-extractor) | `8081` (host) → `8081` (container) |
-| **ML Service** | ML inference API — _not yet active_, uncomment di `docker-compose.yml`                                                                  | `5000`                             |
+## Verify Extractor Directory
 
-> daftar port extractor: `docker-compose.yml`, port host `8081` ke port container `8081`. Nginx di `mirror.conf` memanggil `http://extractor:8081`.
+This deployment requires the Traffic Extractor source code to be present inside the project directory.
 
-## struktur projek
+Expected structure:
 
-```
-ojs-ids-project/
+```text
+OJS-Attack-Detection-Based-On-Log
+├── extractor
+├── nginx
+├── ojs
+├── postgres
+├── scripts
 ├── docker-compose.yml
-├── .env.example
-├── nginx/
-│   ├── nginx.conf
-│   ├── mirror.conf
-│   └── logs/
-├── ojs/
-│   └── Dockerfile
-├── postgres/
-│   └── init.sql
-├── extractor/
-├── dataset/
-│   ├── raw_logs/
-│   ├── processed/
-│   └── export/
-└── scripts/
-    └── setup.sh
+└── README.md
 ```
 
-## cara menjalankan
-
-### first time setup (vm baru)
-
-jalankan:
+Verify:
 
 ```bash
-./scripts/setup.sh
+ls extractor
 ```
 
-flow:
+Expected output:
 
-1. build dan jalankan container
-2. install ojs melalui browser
-3. config.inc.php di-copy otomatis dari container ke host
-4. docker-compose.yml di-update otomatis untuk mount config
-5. container restart dengan persistence aktif
+```text
+app.go
+main.go
+go.mod
+go.sum
+Dockerfile
+...
+```
 
-setelah langkah ini, ojs tidak akan kembali ke installer saat restart.
-
----
-
-### menjalankan sistem (normal run)
+If the directory does not exist, clone the extractor repository into the project:
 
 ```bash
-docker compose up -d
+git clone \
+https://github.com/ManutKataPakEko/traffic-extractor.git \
+extractor
 ```
 
 ---
 
-### update / rebuild
+## Configure Environment
 
-jika melakukan perubahan pada kode (nginx, extractor, dll):
+Create environment file:
+
+```bash
+cp .env.example .env
+```
+
+Edit configuration:
+
+```bash
+nano .env
+```
+
+Configure:
+
+* PostgreSQL credentials
+* ML service integration
+* Dashboard integration
+* Telegram settings (if used)
+
+---
+
+## Prepare Runtime Directories
+
+Create nginx log directory:
+
+```bash
+mkdir -p nginx/logs
+```
+
+Create extractor log file:
+
+```bash
+touch extractor/requests.log
+```
+
+---
+
+## Build and Start Services
 
 ```bash
 docker compose up -d --build
 ```
 
-catatan:
+Verify:
 
-- config.inc.php dimount read-only untuk mencegah overwrite
-- jika tidak, ojs akan kembali ke halaman installer
+```bash
+docker ps
+```
+
+Expected containers:
+
+```text
+ojs-nginx
+ojs-app
+ojs-postgres
+traffic-extractor
+```
 
 ---
 
-### recovery config
+## First-Time OJS Installation
 
-jika ojs kembali ke installer setelah restart:
+Open:
 
-1. ambil config dari container
-
-```bash
-docker cp ojs-app:/var/www/html/config.inc.php ./ojs/config.inc.php
+```text
+http://SERVER_IP
 ```
 
-2. pastikan docker-compose.yml memiliki mount berikut:
+or
 
-```yaml
-- ./ojs/config.inc.php:/var/www/html/config.inc.php:ro
+```text
+http://localhost
 ```
 
-Jika perlu mengubah config, sementara ubah mount ke rw, edit file, lalu kembalikan ke :ro.
+Complete the OJS installation wizard.
 
-3. restart container
+After installation completes, the configuration will automatically be persisted using Docker Volumes.
+
+No manual editing of `config.inc.php` is required.
+
+---
+
+## Persistence
+
+Runtime data is stored in Docker Volumes:
+
+| Volume        | Purpose                  |
+| ------------- | ------------------------ |
+| postgres-data | PostgreSQL database      |
+| ojs-files     | Uploaded journal files   |
+| ojs-public    | Public assets            |
+| ojs-plugins   | Installed plugins        |
+| ojs-config    | Active OJS configuration |
+
+These volumes survive:
 
 ```bash
 docker compose down
 docker compose up -d
 ```
 
+and
+
+```bash
+docker compose up -d --build
+```
+
 ---
 
-### catatan penting
+## Important Warning
 
-- jangan gunakan `docker compose down -v` kecuali ingin reset total
-- setup.sh hanya digunakan untuk initial setup
-- gunakan `docker compose up -d` untuk menjalankan sistem
-- config.inc.php adalah file persistence utama untuk ojs
+Do NOT run:
 
+```bash
+docker compose down -v
+```
 
-docker compose exec ojs sh -lc "sed -i 's#^base_url = .*#base_url = \"https://ojs-cap-gcp.akbarfikri.my.id\"#' /var/www/html/config.inc.php"
-docker compose exec ojs sh -lc "sed -i 's#^force_ssl = .*#force_ssl = Off#' /var/www/html/config.inc.php"
-docker compose exec ojs sh -lc "sed -i 's#^time_zone = .*#time_zone = \"Asia/Jakarta\"#' /var/www/html/config.inc.php"
-docker compose exec ojs sh -lc "rm -rf /var/www/html/cache/t_compile/* /var/www/html/cache/t_cache/*"
-docker compose restart ojs nginx
+This command removes:
 
-## integrating ml service
+* Database
+* Uploaded journal files
+* Public assets
+* Plugins
+* OJS configuration
 
-otw
+and will reset the deployment.
+
+Use:
+
+```bash
+docker compose down
+```
+
+instead.
+
+---
+
+## Verification
+
+Check OJS:
+
+```bash
+curl http://localhost
+```
+
+Check PostgreSQL:
+
+```bash
+docker exec ojs-postgres pg_isready
+```
+
+Check OJS installation status:
+
+```bash
+docker exec ojs-app \
+grep "^installed" \
+/var/www/html/config.inc.php
+```
+
+Expected:
+
+```text
+installed = On
+```
+
+---
+
+## Logs
+
+View all logs:
+
+```bash
+docker compose logs -f
+```
+
+Specific services:
+
+```bash
+docker compose logs -f nginx
+docker compose logs -f ojs
+docker compose logs -f postgres
+docker compose logs -f extractor
+```
+
+---
+
+## Backup
+
+Database:
+
+```bash
+docker exec ojs-postgres \
+pg_dump \
+-U <POSTGRES_USER> \
+-d <POSTGRES_DB> \
+> backup.sql
+```
+
+Configuration:
+
+```bash
+docker cp \
+ojs-app:/var/www/html/config.inc.php \
+./config-runtime-backup.php
+```
+
+Uploaded files:
+
+```bash
+docker run --rm \
+-v ojs-attack-detection-based-on-log_ojs-files:/data \
+-v $(pwd):/backup \
+alpine \
+tar czf /backup/ojs-files-backup.tar.gz /data
+```
+
+---
+
+## Updating OJS
+
+Pull latest repository changes:
+
+```bash
+git pull
+```
+
+Rebuild containers:
+
+```bash
+docker compose up -d --build
+```
+
+Persistent data stored in Docker Volumes will remain intact.
+
+---
+
+## Troubleshooting
+
+### OJS cannot connect to PostgreSQL
+
+Check:
+
+```bash
+docker logs ojs-postgres
+docker logs ojs-app
+```
+
+Verify `.env` credentials.
+
+---
+
+### Extractor container fails
+
+Check:
+
+```bash
+docker logs traffic-extractor
+```
+
+Verify:
+
+```bash
+ls extractor
+```
+
+and ensure the extractor source code exists.
+
+---
+
+### OJS installation page keeps appearing
+
+Verify:
+
+```bash
+docker volume ls
+```
+
+and confirm:
+
+```text
+ojs-config
+postgres-data
+```
+
+still exist.
+
+---
+
+## OJS Version
+
+Current deployment uses:
+
+```text
+Open Journal Systems 3.3.0-14
+```
